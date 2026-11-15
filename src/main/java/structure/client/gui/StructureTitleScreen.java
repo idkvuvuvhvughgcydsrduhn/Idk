@@ -47,8 +47,16 @@ public class StructureTitleScreen extends Screen {
     @Override public boolean shouldCloseOnEsc() { return false; }
 
     private static boolean in(int mx, int my, int x, int y, int w, int h) { return mx >= x && mx < x + w && my >= y && my < y + h; }
+
+    private void border(DrawContext c, int x, int y, int w, int h, int col) {
+        c.fill(x, y, x + w, y + 1, col);           // top
+        c.fill(x, y + h - 1, x + w, y + h, col);   // bottom
+        c.fill(x, y, x + 1, y + h, col);           // left
+        c.fill(x + w - 1, y, x + w, y + h, col);   // right
+    }
+
     private void txt(DrawContext c, String s, int x, int y, int col) { c.drawText(textRenderer, s, x, y, col, false); }
-    private void panel(DrawContext c, int x, int y, int w, int h) { c.fill(x, y, x + w, y + h, 0xCC10051C); c.drawBorder(x, y, w, h, 0xFF3B1068); }
+    private void panel(DrawContext c, int x, int y, int w, int h) { c.fill(x, y, x + w, y + h, 0xCC10051C); border(c, x, y, w, h, 0xFF3B1068); }
 
     private void big(DrawContext c, String s, float cx, float y, float sc, int col, int shadow) {
         int w = textRenderer.getWidth(s);
@@ -129,7 +137,7 @@ public class StructureTitleScreen extends Screen {
             int x = (sw - bw) / 2, y = by0 + i * (bh + gap);
             boolean hov = in(mx, my, x, y, bw, bh);
             c.fill(x, y, x + bw, y + bh, hov ? 0xFF3B1068 : 0xFF1A0A30);
-            c.drawBorder(x, y, bw, bh, hov ? ACC : 0xFF4C2A80);
+            border(c, x, y, bw, bh, hov ? ACC : 0xFF4C2A80);
             txt(c, ICONS[i], x + 8, y + (bh - 8) / 2, ACC);
             txt(c, LABELS[i], x + (bw - textRenderer.getWidth(LABELS[i])) / 2, y + (bh - 8) / 2, 0xFFFFFFFF);
             if (hov && click) {

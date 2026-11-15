@@ -58,6 +58,14 @@ public class ClickGuiScreen extends Screen {
     }
 
     private static boolean in(int mx, int my, int x, int y, int w, int h) {
+
+    private void border(DrawContext c, int x, int y, int w, int h, int col) {
+        c.fill(x, y, x + w, y + 1, col);           // top
+        c.fill(x, y + h - 1, x + w, y + h, col);   // bottom
+        c.fill(x, y, x + 1, y + h, col);           // left
+        c.fill(x + w - 1, y, x + w, y + h, col);   // right
+    }
+
         return mx >= x && mx < x + w && my >= y && my < y + h;
     }
     private void t(DrawContext c, String s, int x, int y, int col) { c.drawText(textRenderer, s, x, y, col, false); }
@@ -94,7 +102,7 @@ public class ClickGuiScreen extends Screen {
     private boolean button(DrawContext c, int mx, int my, boolean click, int x, int y, int w, int h, String label, boolean hot) {
         boolean hov = in(mx, my, x, y, w, h);
         c.fill(x, y, x + w, y + h, hot ? ACC_D : hov ? ROW_H : ROW);
-        c.drawBorder(x, y, w, h, hov ? ACC : 0xFF2E2244);
+        border(c, x, y, w, h, hov ? ACC : 0xFF2E2244);
         t(c, label, x + (w - textRenderer.getWidth(label)) / 2, y + (h - 8) / 2, 0xFFFFFFFF);
         return hov && click;
     }
@@ -106,7 +114,7 @@ public class ClickGuiScreen extends Screen {
             int bx = i == 0 ? cx - bw - 2 : cx + 2;
             boolean hov = in(mx, my, bx, y, bw, 14);
             c.fill(bx, y, bx + bw, y + 14, hov ? ACC_D : ROW);
-            c.drawBorder(bx, y, bw, 14, 0xFF2E2244);
+            border(c, bx, y, bw, 14, 0xFF2E2244);
             t(c, i == 0 ? "▲" : "▼", bx + 9, y + 3, 0xFFFFFFFF);
             if (hov && down) d += i == 0 ? -4 : 4;
         }
@@ -160,7 +168,7 @@ public class ClickGuiScreen extends Screen {
         // ----- frame -----
         c.fill(0, 0, sw, sh, 0x99000000);
         c.fill(px, py, px + pw, py + ph, BG);
-        c.drawBorder(px, py, pw, ph, ACC);
+        border(c, px, py, pw, ph, ACC);
         c.fill(px + 6, py + 6, px + 20, py + 20, ACC_D);
         t(c, "S", px + 11, py + 9, 0xFFFFFFFF);
         t(c, "STRUCTURE", px + 25, py + 9, SILVER);
@@ -183,7 +191,7 @@ public class ClickGuiScreen extends Screen {
 
         // ----- search -----
         c.fill(lx, top, lx + lw, top + 16, PANEL);
-        c.drawBorder(lx, top, lw, 16, focus ? ACC : 0xFF2E2244);
+        border(c, lx, top, lw, 16, focus ? ACC : 0xFF2E2244);
         if (in(mx, my, lx, top, lw, 16) && click) focus = true;
         String shown = query.isEmpty() && !focus ? "Search modules..." : query + (focus && (System.currentTimeMillis() / 500) % 2 == 0 ? "_" : "");
         t(c, fit(shown, lw - 8), lx + 4, top + 4, query.isEmpty() && !focus ? GRAY : 0xFFFFFFFF);

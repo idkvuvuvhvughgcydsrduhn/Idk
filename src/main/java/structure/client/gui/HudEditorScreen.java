@@ -40,10 +40,17 @@ public class HudEditorScreen extends Screen {
         return mx >= x && mx < x + w && my >= y && my < y + h;
     }
 
+    private void border(DrawContext c, int x, int y, int w, int h, int col) {
+        c.fill(x, y, x + w, y + 1, col);           // top
+        c.fill(x, y + h - 1, x + w, y + h, col);   // bottom
+        c.fill(x, y, x + 1, y + h, col);           // left
+        c.fill(x + w - 1, y, x + w, y + h, col);   // right
+    }
+
     private boolean button(DrawContext c, int mx, int my, boolean click, int x, int y, int w, int h, String l, boolean hot) {
         boolean hov = in(mx, my, x, y, w, h);
         c.fill(x, y, x + w, y + h, hot ? 0xFF5B21B6 : hov ? 0xFF1E1233 : 0xFF150E22);
-        c.drawBorder(x, y, w, h, hov || hot ? 0xFF9D4DFF : 0xFF2E2244);
+        border(c, x, y, w, h, hov || hot ? 0xFF9D4DFF : 0xFF2E2244);
         c.drawText(textRenderer, l, x + (w - textRenderer.getWidth(l)) / 2, y + (h - 8) / 2, 0xFFFFFFFF, false);
         return hov && click;
     }
@@ -129,7 +136,7 @@ public class HudEditorScreen extends Screen {
             if (h == null || !h.isEnabled()) continue;
             int hw = (int) (h.w * h.scale.value);
             int hh = (int) (h.h * h.scale.value);
-            c.drawBorder(h.bx - 1, h.by - 1, hw + 2, hh + 2, h == sel ? 0xFFFFFFFF : 0xFF9D4DFF);
+            border(c, h.bx - 1, h.by - 1, hw + 2, hh + 2, h == sel ? 0xFFFFFFFF : 0xFF9D4DFF);
         }
     }
 }
