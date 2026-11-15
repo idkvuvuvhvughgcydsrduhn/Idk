@@ -43,28 +43,45 @@ public class ClickGuiScreen extends Screen {
 
     @Override public boolean shouldPause() { return false; }
 
+    @Override
     public void close() {
         StructureClient.config.save(StructureClient.config.current);
         super.close();
     }
 
+    @Override
     public boolean mouseScrolled(double mx, double my, double h, double v) {
         int d = (int) (-v * 22);
-        if (in((int) mx, (int) my, setBox[0], setBox[1], setBox[2], setBox[3])) scrollS += d; else scrollL += d;
+        if (in((int) mx, (int) my, setBox[0], setBox[1], setBox[2], setBox[3])) scrollS += d;
+        else scrollL += d;
         return true;
     }
 
-    private static boolean in(int mx, int my, int x, int y, int w, int h) { return mx >= x && mx < x + w && my >= y && my < y + h; }
+    private static boolean in(int mx, int my, int x, int y, int w, int h) {
+        return mx >= x && mx < x + w && my >= y && my < y + h;
+    }
     private void t(DrawContext c, String s, int x, int y, int col) { c.drawText(textRenderer, s, x, y, col, false); }
     private String fit(String s, int w) { return textRenderer.getWidth(s) <= w ? s : textRenderer.trimToWidth(s, Math.max(0, w - 6)) + ".."; }
-    private void scanKeys() { for (int k = 32; k < 349; k++) { boolean d = Input.key(k); edges[k] = d && !ks[k]; ks[k] = d; } }
+    private void scanKeys() {
+        for (int k = 32; k < 349; k++) {
+            boolean d = Input.key(k);
+            edges[k] = d && !ks[k];
+            ks[k] = d;
+        }
+    }
     private static int clamp(int v, int lo, int hi) { return Math.max(lo, Math.min(hi, v)); }
 
     static int hsv(float h, float s, float v) {
-        int i = (int) (h * 6); float f = h * 6 - i, p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s), r, g, b;
+        int i = (int) (h * 6);
+        float f = h * 6 - i, p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+        float r, g, b;
         switch (i % 6) {
-            case 0: r = v; g = t; b = p; break; case 1: r = q; g = v; b = p; break; case 2: r = p; g = v; b = t; break;
-            case 3: r = p; g = q; b = v; break; case 4: r = t; g = p; b = v; break; default: r = v; g = p; b = q;
+            case 0: r = v; g = t; b = p; break;
+            case 1: r = q; g = v; b = p; break;
+            case 2: r = p; g = v; b = t; break;
+            case 3: r = p; g = q; b = v; break;
+            case 4: r = t; g = p; b = v; break;
+            default: r = v; g = p; b = q;
         }
         return ((int) (r * 255) << 16) | ((int) (g * 255) << 8) | (int) (b * 255);
     }
@@ -90,7 +107,7 @@ public class ClickGuiScreen extends Screen {
             boolean hov = in(mx, my, bx, y, bw, 14);
             c.fill(bx, y, bx + bw, y + 14, hov ? ACC_D : ROW);
             c.drawBorder(bx, y, bw, 14, 0xFF2E2244);
-            t(c, i == 0 ? "\u25B2" : "\u25BC", bx + 9, y + 3, 0xFFFFFFFF);
+            t(c, i == 0 ? "▲" : "▼", bx + 9, y + 3, 0xFFFFFFFF);
             if (hov && down) d += i == 0 ? -4 : 4;
         }
         return d;
@@ -130,9 +147,12 @@ public class ClickGuiScreen extends Screen {
         } else if (focus) {
             for (int k = 32; k < 349; k++) {
                 if (!edges[k]) continue;
-                if (k == GLFW.GLFW_KEY_BACKSPACE && !query.isEmpty()) { query = query.substring(0, query.length() - 1); scrollL = 0; }
-                else if (query.length() < 20 && ((k >= 65 && k <= 90) || (k >= 48 && k <= 57) || k == 32)) {
-                    query += (char) (k >= 65 && k <= 90 ? k + 32 : k); scrollL = 0;
+                if (k == GLFW.GLFW_KEY_BACKSPACE && !query.isEmpty()) {
+                    query = query.substring(0, query.length() - 1);
+                    scrollL = 0;
+                } else if (query.length() < 20 && ((k >= 65 && k <= 90) || (k >= 48 && k <= 57) || k == 32)) {
+                    query += (char) (k >= 65 && k <= 90 ? k + 32 : k);
+                    scrollL = 0;
                 }
             }
         }
@@ -156,7 +176,10 @@ public class ClickGuiScreen extends Screen {
             if (hov && click) { cat = cg; query = ""; scrollL = 0; }
             yy += 22;
         }
-        if (button(c, mx, my, click, sx, yy + 2, sideW, 20, narrow ? "HUD" : "HUD Editor", false)) { mc.setScreen(new HudEditorScreen()); return; }
+        if (button(c, mx, my, click, sx, yy + 2, sideW, 20, narrow ? "HUD" : "HUD Editor", false)) {
+            mc.setScreen(new HudEditorScreen());
+            return;
+        }
 
         // ----- search -----
         c.fill(lx, top, lx + lw, top + 16, PANEL);
@@ -168,7 +191,8 @@ public class ClickGuiScreen extends Screen {
         // ----- module list -----
         List<Mod> ms = new ArrayList<>();
         if (query.isEmpty()) ms.addAll(mgr.in(cat));
-        else for (Mod m : mgr.all) if (m.name.toLowerCase().contains(query)) ms.add(m);
+        else for (Mod m : mgr.all) if (m != null && m.name.toLowerCase().contains(query)) ms.add(m);
+
         int ly = top + 20, lh = bot - 18 - ly;
         listBox = new int[]{lx, ly, lw, lh};
         c.fill(lx, ly, lx + lw, ly + lh, PANEL);
@@ -176,6 +200,7 @@ public class ClickGuiScreen extends Screen {
         c.enableScissor(lx, ly, lx + lw, ly + lh);
         for (int i = 0; i < ms.size(); i++) {
             Mod m = ms.get(i);
+            if (m == null) continue;
             int ry = ly + i * 22 - scrollL;
             if (ry + 20 < ly || ry > ly + lh) continue;
             boolean hov = in(mx, my, lx, ry, lw, 20) && in(mx, my, lx, ly, lw, lh);
@@ -183,10 +208,16 @@ public class ClickGuiScreen extends Screen {
             if (m.isEnabled()) c.fill(lx + 1, ry, lx + 3, ry + 20, ACC);
             t(c, fit(m.name, lw - 36), lx + 7, ry + 6, 0xFFFFFFFF);
             int swx = lx + lw - 25;
-            if (m instanceof TriggerMod) t(c, ">", swx + 8, ry + 6, SILVER); else toggleSwitch(c, swx, ry + 5, m.isEnabled());
+            if (m instanceof TriggerMod) t(c, ">", swx + 8, ry + 6, SILVER);
+            else toggleSwitch(c, swx, ry + 5, m.isEnabled());
             if (hov && click) {
-                if (in(mx, my, swx - 2, ry, 26, 20)) { m.toggle(); if (m instanceof TriggerMod) return; }
-                else { sel = m; scrollS = 0; }
+                if (in(mx, my, swx - 2, ry, 26, 20)) {
+                    m.toggle();
+                    if (m instanceof TriggerMod) return;
+                } else {
+                    sel = m;
+                    scrollS = 0;
+                }
             }
         }
         c.disableScissor();
@@ -202,59 +233,71 @@ public class ClickGuiScreen extends Screen {
         } else {
             t(c, fit(sel.name, setW - 10), setX + 6, sy + 5, ACC);
             int dy = sy + 17;
-            for (OrderedText ot : textRenderer.wrapLines(Text.literal(sel.description), setW - 12).subList(0, Math.min(2, textRenderer.wrapLines(Text.literal(sel.description), setW - 12).size()))) {
-                c.drawText(textRenderer, ot, setX + 6, dy, GRAY, false); dy += 10;
+            List<OrderedText> descLines = textRenderer.wrapLines(Text.literal(sel.description != null ? sel.description : ""), setW - 12);
+            for (OrderedText ot : descLines.subList(0, Math.min(2, descLines.size()))) {
+                c.drawText(textRenderer, ot, setX + 6, dy, GRAY, false);
+                dy += 10;
             }
             int vy = dy + 3, vh = sy + sH - vy;
             c.fill(setX + 4, vy - 2, setX + setW - 4, vy - 1, 0xFF2E2244);
-            int total = 22; for (Setting s : sel.settings) total += (s instanceof Setting.Num || s instanceof Setting.Color) ? 28 : 22;
+            int total = 22;
+            if (sel.settings != null) {
+                for (Setting s : sel.settings) total += (s instanceof Setting.Num || s instanceof Setting.Color) ? 28 : 22;
+            }
             scrollS = clamp(scrollS, 0, Math.max(0, total - vh));
             boolean inView = in(mx, my, setX, vy, setW, vh);
             c.enableScissor(setX, vy, setX + setW, vy + vh);
             int ry = vy - scrollS;
+
             // bind row
             String bl = binding == sel ? "Press a key... (Bksp = clear)" : "Bind: " + Input.keyName(sel.key);
-            if (button(c, mx, my, click && inView, setX + 6, ry, setW - 12, 18, fit(bl, setW - 16), binding == sel)) binding = sel;
+            if (button(c, mx, my, click && inView, setX + 6, ry, setW - 12, 18, fit(bl, setW - 16), binding == sel)) {
+                binding = sel;
+            }
             ry += 22;
-            for (Setting s : sel.settings) {
-                int rx = setX + 6, rw = setW - 12;
-                if (s instanceof Setting.Bool b) {
-                    t(c, fit(b.name, rw - 26), rx, ry + 5, 0xFFFFFFFF);
-                    toggleSwitch(c, rx + rw - 20, ry + 4, b.value);
-                    if (click && inView && in(mx, my, rx, ry, rw, 20)) b.value = !b.value;
-                    ry += 22;
-                } else if (s instanceof Setting.Mode m) {
-                    t(c, fit(m.name, rw / 2 - 2), rx, ry + 5, 0xFFFFFFFF);
-                    if (button(c, mx, my, click && inView, rx + rw / 2, ry, rw - rw / 2, 18, fit(m.get(), rw / 2 - 4), false)) m.cycle();
-                    ry += 22;
-                } else if (s instanceof Setting.Num n) {
-                    String v = n.step >= 1 ? String.valueOf(n.i()) : (n.step < 0.1 ? String.format("%.2f", n.value) : String.format("%.1f", n.value));
-                    t(c, fit(n.name, rw - 34), rx, ry + 2, 0xFFFFFFFF);
-                    t(c, v, rx + rw - textRenderer.getWidth(v), ry + 2, SILVER);
-                    int tx = rx, tw = rw, ty = ry + 15;
-                    c.fill(tx, ty, tx + tw, ty + 6, OFF);
-                    int fw = (int) (tw * (n.value - n.min) / (n.max - n.min));
-                    c.fill(tx, ty, tx + fw, ty + 6, ACC);
-                    c.fill(tx + fw - 1, ty - 2, tx + fw + 2, ty + 8, 0xFFF0F0F8);
-                    if (click && inView && in(mx, my, tx, ty - 4, tw, 14)) { dragging = n; dragX = tx; dragW = tw; }
-                    if (dragging == n && down) n.set(n.min + Math.max(0, Math.min(1, (mx - dragX) / (double) dragW)) * (n.max - n.min));
-                    ry += 28;
-                } else if (s instanceof Setting.Color cs) {
-                    t(c, fit(cs.name, rw - 16), rx, ry + 2, 0xFFFFFFFF);
-                    c.fill(rx + rw - 12, ry + 1, rx + rw, ry + 11, 0xFF000000 | cs.rgb);
-                    int tx = rx, tw = rw, ty = ry + 14, seg = 48;
-                    for (int i = 0; i < seg; i++) {
-                        int x1 = tx + i * tw / seg, x2 = tx + (i + 1) * tw / seg;
-                        float tt = (i + 0.5f) / seg;
-                        int col = tt > 0.93f ? 0xFFFFFF : hsv(tt / 0.93f, 1f, 1f);
-                        c.fill(x1, ty, x2, ty + 9, 0xFF000000 | col);
+
+            if (sel.settings != null) {
+                for (Setting s : sel.settings) {
+                    if (s == null) continue;
+                    int rx = setX + 6, rw = setW - 12;
+                    if (s instanceof Setting.Bool b) {
+                        t(c, fit(b.name, rw - 26), rx, ry + 5, 0xFFFFFFFF);
+                        toggleSwitch(c, rx + rw - 20, ry + 4, b.value);
+                        if (click && inView && in(mx, my, rx, ry, rw, 20)) b.value = !b.value;
+                        ry += 22;
+                    } else if (s instanceof Setting.Mode m) {
+                        t(c, fit(m.name, rw / 2 - 2), rx, ry + 5, 0xFFFFFFFF);
+                        if (button(c, mx, my, click && inView, rx + rw / 2, ry, rw - rw / 2, 18, fit(m.get(), rw / 2 - 4), false)) m.cycle();
+                        ry += 22;
+                    } else if (s instanceof Setting.Num n) {
+                        String v = n.step >= 1 ? String.valueOf(n.i()) : (n.step < 0.1 ? String.format("%.2f", n.value) : String.format("%.1f", n.value));
+                        t(c, fit(n.name, rw - 34), rx, ry + 2, 0xFFFFFFFF);
+                        t(c, v, rx + rw - textRenderer.getWidth(v), ry + 2, SILVER);
+                        int tx = rx, tw = rw, ty = ry + 15;
+                        c.fill(tx, ty, tx + tw, ty + 6, OFF);
+                        int fw = (int) (tw * (n.value - n.min) / (n.max - n.min));
+                        c.fill(tx, ty, tx + fw, ty + 6, ACC);
+                        c.fill(tx + fw - 1, ty - 2, tx + fw + 2, ty + 8, 0xFFF0F0F8);
+                        if (click && inView && in(mx, my, tx, ty - 4, tw, 14)) { dragging = n; dragX = tx; dragW = tw; }
+                        if (dragging == n && down) n.set(n.min + Math.max(0, Math.min(1, (mx - dragX) / (double) dragW)) * (n.max - n.min));
+                        ry += 28;
+                    } else if (s instanceof Setting.Color cs) {
+                        t(c, fit(cs.name, rw - 16), rx, ry + 2, 0xFFFFFFFF);
+                        c.fill(rx + rw - 12, ry + 1, rx + rw, ry + 11, 0xFF000000 | cs.rgb);
+                        int tx = rx, tw = rw, ty = ry + 14, seg = 48;
+                        for (int i = 0; i < seg; i++) {
+                            int x1 = tx + i * tw / seg, x2 = tx + (i + 1) * tw / seg;
+                            float tt = (i + 0.5f) / seg;
+                            int col = tt > 0.93f ? 0xFFFFFF : hsv(tt / 0.93f, 1f, 1f);
+                            c.fill(x1, ty, x2, ty + 9, 0xFF000000 | col);
+                        }
+                        if (click && inView && in(mx, my, tx, ty - 2, tw, 13)) { dragging = cs; dragX = tx; dragW = tw; }
+                        if (dragging == cs && down) {
+                            float tt = Math.max(0f, Math.min(1f, (mx - dragX) / (float) dragW));
+                            cs.rgb = tt > 0.93f ? 0xFFFFFF : hsv(tt / 0.93f, 1f, 1f);
+                        }
+                        ry += 28;
                     }
-                    if (click && inView && in(mx, my, tx, ty - 2, tw, 13)) { dragging = cs; dragX = tx; dragW = tw; }
-                    if (dragging == cs && down) {
-                        float tt = Math.max(0f, Math.min(1f, (mx - dragX) / (float) dragW));
-                        cs.rgb = tt > 0.93f ? 0xFFFFFF : hsv(tt / 0.93f, 1f, 1f);
-                    }
-                    ry += 28;
                 }
             }
             c.disableScissor();
@@ -271,11 +314,19 @@ public class ClickGuiScreen extends Screen {
             if (!button(c, mx, my, click, bx0 + i * (bw + 2), cy, bw, 18, labels[i], false)) continue;
             List<String> names = cfg.list();
             switch (i) {
-                case 0, 1 -> { int idx = names.indexOf(selCfg); if (idx < 0) idx = 0; selCfg = names.get((idx + (i == 0 ? -1 : 1) + names.size()) % names.size()); }
+                case 0, 1 -> {
+                    int idx = names.indexOf(selCfg);
+                    if (idx < 0) idx = 0;
+                    selCfg = names.get((idx + (i == 0 ? -1 : 1) + names.size()) % names.size());
+                }
                 case 2 -> say(cfg.save(selCfg) ? "Saved " + selCfg : "Save failed");
                 case 3 -> say(cfg.load(selCfg) ? "Loaded " + selCfg : "No such config");
                 case 4 -> { selCfg = cfg.create(); say("Created " + selCfg); }
-                case 5 -> { String d = selCfg; if (cfg.delete(d)) { selCfg = "default"; say("Deleted " + d); } else say("Can't delete that"); }
+                case 5 -> {
+                    String d = selCfg;
+                    if (cfg.delete(d)) { selCfg = "default"; say("Deleted " + d); }
+                    else say("Can't delete that");
+                }
             }
         }
     }

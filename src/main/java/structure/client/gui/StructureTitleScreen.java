@@ -44,7 +44,7 @@ public class StructureTitleScreen extends Screen {
     }
 
     @Override public boolean shouldPause() { return false; }
-    public boolean shouldCloseOnEsc() { return false; }
+    @Override public boolean shouldCloseOnEsc() { return false; }
 
     private static boolean in(int mx, int my, int x, int y, int w, int h) { return mx >= x && mx < x + w && my >= y && my < y + h; }
     private void txt(DrawContext c, String s, int x, int y, int col) { c.drawText(textRenderer, s, x, y, col, false); }
@@ -110,7 +110,7 @@ public class StructureTitleScreen extends Screen {
 
         // ---- logo ----
         float cx = sw / 2f;
-        int w1 = textRenderer.getWidth("\u00a7lSTRUCTURE");
+        int w1 = textRenderer.getWidth("STRUCTURE");
         float avail = by0 - 8 - 12;
         float sc = Math.max(1f, Math.min(sw * 0.40f / w1, (avail - 28) / 20f));
         int u = Math.max(1, Math.round(sc * 0.6f));
@@ -118,10 +118,11 @@ public class StructureTitleScreen extends Screen {
         c.fill((int) cx - 6 * u, cy + 5 * u, (int) cx + 6 * u, cy + 7 * u, 0xFFC8A2FF);
         for (int i = -1; i <= 1; i++) c.fill((int) cx + i * 5 * u - u, cy + u, (int) cx + i * 5 * u + u, cy + 5 * u, 0xFFC8A2FF);
         float l1 = cy + 8 * u;
-        big(c, "\u00a7lSTRUCTURE", cx, l1, sc, SILVER, 0xFF3B1068);
+        big(c, "§lSTRUCTURE", cx, l1, sc, SILVER, 0xFF3B1068);
         float l2 = l1 + 9 * sc;
-        big(c, "\u00a7l\u00a7oCLIENT", cx, l2, sc * 1.05f, ACC, 0xFF1E0646);
-        txt(c, "P L A Y  \u2022  C H E A T  \u2022  D O M I N A T E", (int) cx - textRenderer.getWidth("P L A Y  \u2022  C H E A T  \u2022  D O M I N A T E") / 2, (int) (l2 + 9 * sc * 1.05f + 4), SOFT);
+        big(c, "§l§oCLIENT", cx, l2, sc * 1.05f, ACC, 0xFF1E0646);
+        String tagline = "P L A Y  •  C H E A T  •  D O M I N A T E";
+        txt(c, tagline, (int) cx - textRenderer.getWidth(tagline) / 2, (int) (l2 + 9 * sc * 1.05f + 4), SOFT);
 
         // ---- buttons ----
         for (int i = 0; i < 6; i++) {
@@ -140,7 +141,7 @@ public class StructureTitleScreen extends Screen {
                     case 4 -> say("Accounts are managed by your launcher.");
                     default -> mc.scheduleStop();
                 }
-                if (i < 4 && i != 4) return;
+                if (i != 4) return; // ออกจาก render ทันทีถ้าเปลี่ยนหน้าจอ
             }
         }
 
@@ -157,21 +158,32 @@ public class StructureTitleScreen extends Screen {
             // Client Info
             int ix = 6, iy = (int) (sh * 0.40f);
             panel(c, ix, iy, pw, 48);
-            txt(c, "\u2605 Client Info", ix + 6, iy + 5, 0xFFFFFFFF);
-            txt(c, "FPS: ", ix + 6, iy + 18, SOFT); txt(c, String.valueOf(mc.getCurrentFps()), ix + 6 + textRenderer.getWidth("FPS: "), iy + 18, 0xFF4ADE80);
+            txt(c, "★ Client Info", ix + 6, iy + 5, 0xFFFFFFFF);
+            txt(c, "FPS: ", ix + 6, iy + 18, SOFT);
+            txt(c, String.valueOf(mc.getCurrentFps()), ix + 6 + textRenderer.getWidth("FPS: "), iy + 18, 0xFF4ADE80);
             txt(c, "Time: " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")), ix + 6, iy + 30, SOFT);
+
             // Quick Features
             int qx = sw - pw - 6, qy = (int) (sh * 0.36f);
             panel(c, qx, qy, pw, 62);
-            txt(c, "\u26A1 Quick Features", qx + 6, qy + 5, 0xFFFFFFFF);
-            Mod[] qm = {StructureClient.modules.get(PlayerModules.ArmorHud.class), StructureClient.modules.get(UtilityModules.ClientInfo.class), StructureClient.modules.get(PlayerModules.Coordinates.class)};
+            txt(c, "⚡ Quick Features", qx + 6, qy + 5, 0xFFFFFFFF);
+
+            Mod[] qm = {
+                StructureClient.modules.get(PlayerModules.ArmorHud.class),
+                StructureClient.modules.get(UtilityModules.ClientInfo.class),
+                StructureClient.modules.get(PlayerModules.Coordinates.class)
+            };
             String[] ql = {"Armor HUD", "Client Info", "Coordinates"};
             for (int i = 0; i < 3; i++) {
                 int ry = qy + 18 + i * 14;
                 txt(c, ql[i], qx + 6, ry + 1, 0xFFFFFFFF);
-                toggle(c, qx + pw - 26, ry, qm[i].isEnabled());
-                if (click && in(mx, my, qx, ry - 2, pw, 14)) qm[i].toggle();
+                boolean enabled = qm[i] != null && qm[i].isEnabled();
+                toggle(c, qx + pw - 26, ry, enabled);
+                if (click && in(mx, my, qx, ry - 2, pw, 14) && qm[i] != null) {
+                    qm[i].toggle();
+                }
             }
+
             // Welcome card (slides)
             int wi = (int) ((now / 4000) % 3);
             int wy = sh - 22 - 42;
@@ -180,20 +192,25 @@ public class StructureTitleScreen extends Screen {
             txt(c, SLIDES[wi][1], 12, wy + 16, ACC);
             txt(c, SLIDES[wi][2], 12, wy + 26, SOFT);
             for (int i = 0; i < 3; i++) c.fill(12 + i * 8, wy + 37, 16 + i * 8, wy + 40, i == wi ? ACC : 0xFF3A3050);
+
             // Tip
             int ty = sh - 22 - 40;
             panel(c, qx, ty, pw, 40);
-            txt(c, "\u24D8 Tip:", qx + 6, ty + 5, 0xFFFFFFFF);
+            txt(c, "ⓘ Tip:", qx + 6, ty + 5, 0xFFFFFFFF);
             int yy = ty + 16;
             var lines = textRenderer.wrapLines(Text.literal("Press Right Shift to open ClickGUI!"), pw - 12);
-            for (OrderedText ot : lines.subList(0, Math.min(2, lines.size()))) { c.drawText(textRenderer, ot, qx + 6, yy, SOFT, false); yy += 10; }
+            for (OrderedText ot : lines.subList(0, Math.min(2, lines.size()))) {
+                c.drawText(textRenderer, ot, qx + 6, yy, SOFT, false);
+                yy += 10;
+            }
         }
 
         // ---- footer ----
         c.fill(0, sh - 16, sw, sh, 0xCC000000);
-        txt(c, "\u25C6 Powered by Fabric", 8, sh - 12, SOFT);
-        String mw = "Made with \u2665 by Structure Team";
+        txt(c, "◆ Powered by Fabric", 8, sh - 12, SOFT);
+        String mw = "Made with ♥ by Structure Team";
         txt(c, mw, sw - 8 - textRenderer.getWidth(mw), sh - 12, SOFT);
+
         if (now < toastUntil) {
             int tw = textRenderer.getWidth(toast) + 12;
             panel(c, (sw - tw) / 2, by0 - 20, tw, 14);
