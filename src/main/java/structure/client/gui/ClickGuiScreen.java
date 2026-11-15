@@ -58,6 +58,8 @@ public class ClickGuiScreen extends Screen {
     }
 
     private static boolean in(int mx, int my, int x, int y, int w, int h) {
+        return mx >= x && mx < x + w && my >= y && my < y + h;
+    }
 
     private void border(DrawContext c, int x, int y, int w, int h, int col) {
         c.fill(x, y, x + w, y + 1, col);           // top
@@ -66,8 +68,6 @@ public class ClickGuiScreen extends Screen {
         c.fill(x + w - 1, y, x + w, y + h, col);   // right
     }
 
-        return mx >= x && mx < x + w && my >= y && my < y + h;
-    }
     private void t(DrawContext c, String s, int x, int y, int col) { c.drawText(textRenderer, s, x, y, col, false); }
     private String fit(String s, int w) { return textRenderer.getWidth(s) <= w ? s : textRenderer.trimToWidth(s, Math.max(0, w - 6)) + ".."; }
     private void scanKeys() {
