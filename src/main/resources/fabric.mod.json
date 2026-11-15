@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "structureclient",
+  "version": "${version}",
+  "name": "Structure Client",
+  "description": "Blatant-style Fabric client. Play, Cheat, Dominate.",
+  "authors": ["Structure Team"],
+  "environment": "client",
+  "entrypoints": { "client": ["structure.client.StructureClient"] },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
