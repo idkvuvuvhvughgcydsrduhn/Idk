@@ -3,12 +3,18 @@
   "id": "structureclient",
   "version": "${version}",
   "name": "Structure Client",
-  "description": "Blatant-style Fabric client. Play, Cheat, Dominate.",
+  "description": "Purple/Black/Silver utility client: modules, ClickGUI, HUD editor and configs. Built for touch and keyboard.",
   "authors": ["Structure Team"],
+  "license": "MIT",
   "environment": "client",
-  "entrypoints": { "client": ["structure.client.StructureClient"] },
+  "entrypoints": {
+    "client": ["dev.structure.client.StructureClient"]
+  },
+  "mixins": [
+    { "config": "structureclient.mixins.json", "environment": "client" }
+  ],
   "depends": {
-    "fabricloader": ">=0.18.0",
+    "fabricloader": ">=0.18.4",
     "minecraft": "~1.21.11",
     "java": ">=21",
     "fabric-api": "*"
