@@ -320,11 +320,12 @@ public class ClickGuiScreen extends Screen {
 				Draw.toggle(ctx, swx, ry + 5, 20, 10, m.isEnabled(), acc);
 			}
 			final Module mm = m;
-			hits.add(swx - 4, ry, 30, 20, () -> mm.toggle());
+			// row first, toggle second: Hits.at() returns the last-added (topmost) region
 			hits.add(lx, ry, lw, 20, () -> {
 				sel = mm;
 				scrollSet = 0;
 			});
+			hits.add(swx - 4, ry, 30, 20, () -> mm.toggle());
 		}
 		hits.clearClip();
 		ctx.disableScissor();
