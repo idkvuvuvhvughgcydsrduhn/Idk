@@ -5,15 +5,12 @@ import dev.structure.client.module.Category;
 import dev.structure.client.module.Module;
 import dev.structure.client.setting.NumberSetting;
 
-/**
- * Lowers the delay between block placements. Only active in singleplayer: on servers the
- * placement rate is checked by the server, so this module does nothing there.
- */
+/** Lowers the client-side delay between block placements. */
 public class FastPlace extends Module {
 	private final NumberSetting delay = add(new NumberSetting("Delay", 0, 0, 4, 1));
 
 	public FastPlace() {
-		super("Fast Place", "Lowers the block placement delay (singleplayer only).", Category.PLAYER);
+		super("Fast Place", "Lowers the client-side block placement delay.", Category.PLAYER);
 	}
 
 	@Override
@@ -23,7 +20,7 @@ public class FastPlace extends Module {
 
 	@Override
 	public void onPreTick() {
-		if (mc.player == null || mc.world == null || !mc.isInSingleplayer()) return;
+		if (mc.field_1724 == null || mc.field_1687 == null) return;
 		MinecraftClientAccessor acc = (MinecraftClientAccessor) (Object) mc;
 		int cooldown = acc.structure$getItemUseCooldown();
 		if (cooldown > delay.i()) acc.structure$setItemUseCooldown(delay.i());
