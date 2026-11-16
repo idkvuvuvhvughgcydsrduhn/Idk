@@ -1,228 +1,221 @@
-package structure.client.gui;
+package dev.structure.client.gui;
 
+import dev.structure.client.StructureClient;
+import dev.structure.client.module.ModuleManager;
+import dev.structure.client.module.utility.ClientSettings;
+import dev.structure.client.util.Draw;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
-import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.screen.world.SelectWorldScreen;
-import net.minecraft.text.OrderedText;
+import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.text.Text;
-import org.lwjgl.glfw.GLFW;
-import structure.client.StructureClient;
-import structure.client.core.Mod;
-import structure.client.modules.PlayerModules;
-import structure.client.modules.UtilityModules;
-import structure.client.util.Input;
 
-/** Structure Client main menu. Everything is drawn in code (no image assets), scaled to any screen size. */
+/** Structure Client main menu. Drawn procedurally, so it needs no image assets and scales to any screen. */
 public class StructureTitleScreen extends Screen {
-    private static final MinecraftClient mc = MinecraftClient.getInstance();
-    private static final int ACC = 0xFF9D4DFF, ACC_D = 0xFF5B21B6, SILVER = 0xFFD4D4DE, SOFT = 0xFFB9A9D6;
-    private static final String[] ICONS = {"\u25B6", "\u25CE", "\u2726", "\u2699", "\u263B", "\u2716"};
-    private static final String[] LABELS = {"Singleplayer", "Multiplayer", "Client Settings", "Settings", "Accounts", "Quit Game"};
-    private static final String[][] SLIDES = {
-            {"Welcome to", "Structure Client!", "Enjoy your game!"},
-            {"Press Right Shift", "to open the ClickGUI", "Panic key: Delete"},
-            {"Tap a module name", "to edit its settings", "Switch = on / off"}};
+	private static final String[] LABELS = {"Singleplayer", "Multiplayer", "Client Settings", "Options", "Quit Game"};
+	private static final String[] ICONS = {">", "*", "+", "~", "x"};
+	private static final String[][] SLIDES = {
+		{"Welcome to", "Structure Client!", "Enjoy your game!"},
+		{"Press Right Shift", "to open the ClickGUI", "Panic key: Delete"},
+		{"Tap a module name", "to edit its settings", "Switch = on / off"}};
 
-    private final float[][] stars = new float[70][3], towers = new float[34][4], pix = new float[170][4];
-    private boolean pDown, rsHeld;
-    private String toast = "";
-    private long toastUntil;
+	private final Hits hits = new Hits();
+	private final float[][] stars = new float[70][3];
+	private final float[][] towers = new float[34][4];
+	private final float[][] pix = new float[170][4];
+	private int mouseX, mouseY;
 
-    public StructureTitleScreen() {
-        super(Text.literal("Structure Client"));
-        Random r = new Random(7);
-        for (float[] s : stars) { s[0] = r.nextFloat(); s[1] = r.nextFloat() * 0.6f; s[2] = 0.3f + r.nextFloat() * 0.7f; }
-        for (float[] t : towers) { t[0] = 0.40f + r.nextFloat() * 0.60f; t[1] = r.nextFloat(); t[2] = 0.08f + r.nextFloat() * 0.34f; t[3] = r.nextFloat(); }
-        for (float[] p : pix) { p[0] = r.nextFloat() * 0.26f; p[1] = 0.12f + r.nextFloat() * 0.42f; p[2] = r.nextFloat(); p[3] = r.nextFloat(); }
-        rsHeld = Input.key(GLFW.GLFW_KEY_RIGHT_SHIFT);
-    }
+	public StructureTitleScreen() {
+		super(Text.literal("Structure Client"));
+		Random r = new Random(7);
+		for (float[] s : stars) {
+			s[0] = r.nextFloat();
+			s[1] = r.nextFloat() * 0.6f;
+			s[2] = 0.3f + r.nextFloat() * 0.7f;
+		}
+		for (float[] t : towers) {
+			t[0] = 0.40f + r.nextFloat() * 0.60f;
+			t[1] = r.nextFloat();
+			t[2] = 0.08f + r.nextFloat() * 0.34f;
+			t[3] = r.nextFloat();
+		}
+		for (float[] p : pix) {
+			p[0] = r.nextFloat() * 0.26f;
+			p[1] = 0.12f + r.nextFloat() * 0.42f;
+			p[2] = r.nextFloat();
+			p[3] = r.nextFloat();
+		}
+	}
 
-    @Override public boolean shouldPause() { return false; }
-    @Override public boolean shouldCloseOnEsc() { return false; }
+	@Override
+	public boolean shouldPause() {
+		return false;
+	}
 
-    private static boolean in(int mx, int my, int x, int y, int w, int h) { return mx >= x && mx < x + w && my >= y && my < y + h; }
+	@Override
+	public boolean mouseClicked(Click click, boolean doubled) {
+		Hits.Hit h = hits.at(click.x(), click.y());
+		if (h != null && h.tap != null) h.tap.run();
+		return true;
+	}
 
-    private void border(DrawContext c, int x, int y, int w, int h, int col) {
-        c.fill(x, y, x + w, y + 1, col);           // top
-        c.fill(x, y + h - 1, x + w, y + h, col);   // bottom
-        c.fill(x, y, x + 1, y + h, col);           // left
-        c.fill(x + w - 1, y, x + w, y + h, col);   // right
-    }
+	private void button(DrawContext ctx, int x, int y, int w, int h, String label, String icon, Runnable tap) {
+		boolean hov = Draw.inside(mouseX, mouseY, x, y, w, h);
+		int acc = ClientSettings.accentColor();
+		ctx.fill(x, y, x + w, y + h, hov ? Draw.darken(acc, 0.5f) : 0xFF1A0A30);
+		Draw.outline(ctx, x, y, w, h, hov ? acc : 0xFF4C2A80);
+		Draw.text(ctx, icon, x + 8, y + (h - 8) / 2, acc);
+		Draw.textCenter(ctx, label, x + w / 2, y + (h - 8) / 2, 0xFFFFFFFF);
+		hits.add(x, y, w, h, tap);
+	}
 
-    private void txt(DrawContext c, String s, int x, int y, int col) { c.drawText(textRenderer, s, x, y, col, false); }
-    private void panel(DrawContext c, int x, int y, int w, int h) { c.fill(x, y, x + w, y + h, 0xCC10051C); border(c, x, y, w, h, 0xFF3B1068); }
+	@Override
+	public void render(DrawContext ctx, int mx, int my, float delta) {
+		hits.clear();
+		mouseX = mx;
+		mouseY = my;
+		int sw = width, sh = height;
+		long now = System.currentTimeMillis();
+		int acc = ClientSettings.accentColor();
 
-    private void big(DrawContext c, String s, float cx, float y, float sc, int col, int shadow) {
-        int w = textRenderer.getWidth(s);
-        var m = c.getMatrices();
-        m.pushMatrix();
-        m.translate(cx - w * sc / 2f, y);
-        m.scale(sc, sc);
-        c.drawText(textRenderer, s, 1, 1, shadow, false);
-        c.drawText(textRenderer, s, 0, 0, col, false);
-        m.popMatrix();
-    }
+		// background
+		ctx.fillGradient(0, 0, sw, sh / 2, 0xFF0F031C, 0xFF2A0B4A);
+		ctx.fillGradient(0, sh / 2, sw, sh, 0xFF2A0B4A, 0xFF0A0214);
+		for (float[] s : stars) {
+			int a = (int) (255 * s[2]);
+			int x = (int) (s[0] * sw), y = (int) (s[1] * sh);
+			ctx.fill(x, y, x + 1, y + 1, (a << 24) | 0xE9D5FF);
+		}
+		int ms = Math.max(8, sh / 9), mxp = (int) (sw * 0.78f), myp = (int) (sh * 0.08f);
+		ctx.fill(mxp, myp, mxp + ms, myp + ms, 0xFFE9D5FF);
+		ctx.fill(mxp + 2, myp + 2, mxp + ms - 2, myp + ms - 2, 0xFFC4A1F5);
+		for (float[] t : towers) {
+			int x = (int) (t[0] * sw), w = 3 + (int) (t[1] * 10), h = (int) (t[2] * sh);
+			ctx.fill(x, sh - h, x + w, sh, 0xFF14062A);
+			ctx.fill(x, sh - h, x + 1, sh, 0xFF2B0F52);
+			if (t[3] > 0.6f) ctx.fill(x + w / 2, sh - h + h / 3, x + w / 2 + 1, sh - h + h / 3 + 2, acc);
+		}
+		int[] leaf = {0xFF6D28D9, 0xFF7E22CE, 0xFF4C1D95, 0xFF9333EA};
+		for (float[] p : pix) {
+			int s = 2 + (int) (p[2] * 4);
+			int x = (int) (p[0] * sw), y = (int) (p[1] * sh);
+			ctx.fill(x, y, x + s, y + s, leaf[(int) (p[3] * 3.99f)]);
+		}
+		ctx.fillGradient(0, sh - sh / 5, sw, sh, 0x00000000, 0xAA000000);
 
-    private void toggle(DrawContext c, int x, int y, boolean on) {
-        c.fill(x, y, x + 20, y + 10, on ? ACC : 0xFF3A3050);
-        c.fill(on ? x + 11 : x + 1, y + 1, on ? x + 19 : x + 9, y + 9, 0xFFF0F0F8);
-    }
+		// layout
+		int bw = Math.min(220, (int) (sw * 0.44f));
+		int bh = (int) Math.min(26, sh * 0.52 / 6.5);
+		int gap = Math.max(2, (int) (bh * 0.2));
+		int stack = LABELS.length * bh + (LABELS.length - 1) * gap;
+		int by0 = sh - 22 - stack;
 
-    private void say(String s) { toast = s; toastUntil = System.currentTimeMillis() + 2500; }
+		// logo
+		float cx = sw / 2f;
+		String logo = "STRUCTURE";
+		int w1 = Draw.width(logo);
+		float avail = by0 - 8 - 12;
+		float sc = Math.max(1f, Math.min(sw * 0.40f / w1, (avail - 28) / 20f));
+		int u = Math.max(1, Math.round(sc * 0.6f));
+		int cy = 12;
+		ctx.fill((int) cx - 6 * u, cy + 5 * u, (int) cx + 6 * u, cy + 7 * u, 0xFFC8A2FF);
+		for (int i = -1; i <= 1; i++) ctx.fill((int) cx + i * 5 * u - u, cy + u, (int) cx + i * 5 * u + u, cy + 5 * u, 0xFFC8A2FF);
+		float l1 = cy + 8 * u;
+		big(ctx, logo, cx, l1, sc, Theme.SILVER, 0xFF3B1068);
+		float l2 = l1 + 9 * sc;
+		big(ctx, "CLIENT", cx, l2, sc * 1.05f, acc, 0xFF1E0646);
+		String tagline = "P L A Y   \u2022   C H E A T   \u2022   D O M I N A T E";
+		Draw.textCenter(ctx, tagline, (int) cx, (int) (l2 + 9 * sc * 1.05f + 4), 0xFFB9A9D6);
 
-    @Override
-    public void render(DrawContext c, int mx, int my, float delta) {
-        boolean down = Input.mouse(0), click = down && !pDown;
-        pDown = down;
-        boolean rs = Input.key(GLFW.GLFW_KEY_RIGHT_SHIFT);
-        if (rs && !rsHeld) { mc.setScreen(new ClickGuiScreen()); return; }
-        rsHeld = rs;
-        int sw = width, sh = height;
-        long now = System.currentTimeMillis();
+		// buttons
+		for (int i = 0; i < LABELS.length; i++) {
+			int x = (sw - bw) / 2, y = by0 + i * (bh + gap);
+			final int idx = i;
+			button(ctx, x, y, bw, bh, LABELS[i], ICONS[i], () -> action(idx));
+		}
 
-        // ---- background (all procedural) ----
-        c.fillGradient(0, 0, sw, sh / 2, 0xFF0F031C, 0xFF2A0B4A);
-        c.fillGradient(0, sh / 2, sw, sh, 0xFF2A0B4A, 0xFF0A0214);
-        for (float[] s : stars) {
-            int a = (int) (255 * s[2]);
-            c.fill((int) (s[0] * sw), (int) (s[1] * sh), (int) (s[0] * sw) + 1, (int) (s[1] * sh) + 1, (a << 24) | 0xE9D5FF);
-        }
-        int ms = Math.max(8, sh / 9), mxp = (int) (sw * 0.78f), myp = (int) (sh * 0.08f);
-        c.fill(mxp, myp, mxp + ms, myp + ms, 0xFFE9D5FF);
-        c.fill(mxp + 2, myp + 2, mxp + ms - 2, myp + ms - 2, 0xFFC4A1F5);
-        for (float[] t : towers) {
-            int x = (int) (t[0] * sw), w = 3 + (int) (t[1] * 10), h = (int) (t[2] * sh);
-            c.fill(x, sh - h, x + w, sh, 0xFF14062A);
-            c.fill(x, sh - h, x + 1, sh, 0xFF2B0F52);
-            if (t[3] > 0.6f) c.fill(x + w / 2, sh - h + h / 3, x + w / 2 + 1, sh - h + h / 3 + 2, ACC);
-        }
-        int[] leaf = {0xFF6D28D9, 0xFF7E22CE, 0xFF4C1D95, 0xFF9333EA};
-        for (float[] p : pix) {
-            int s = 2 + (int) (p[2] * 4);
-            c.fill((int) (p[0] * sw), (int) (p[1] * sh), (int) (p[0] * sw) + s, (int) (p[1] * sh) + s, leaf[(int) (p[3] * 3.99f)]);
-        }
-        c.fillGradient(0, sh - sh / 5, sw, sh, 0x00000000, 0xAA000000);
+		// top-left tag
+		ctx.fill(4, 4, 108, 28, 0xCC10051C);
+		Draw.outline(ctx, 4, 4, 104, 24, 0xFF3B1068);
+		ctx.fill(8, 8, 22, 24, Draw.darken(acc, 0.5f));
+		Draw.text(ctx, "S", 13, 12, 0xFFFFFFFF);
+		Draw.text(ctx, "Structure Client", 27, 8, 0xFFFFFFFF);
+		Draw.text(ctx, StructureClient.VERSION, 27, 18, acc);
 
-        // ---- layout ----
-        int bw = Math.min(220, (int) (sw * 0.44f));
-        int bh = (int) Math.min(26, sh * 0.52 / 6.5);
-        int gap = Math.max(2, (int) (bh * 0.2));
-        int stack = 6 * bh + 5 * gap;
-        int by0 = sh - 22 - stack;
+		// side panels
+		if (sw >= 420) {
+			int pw = Math.min(116, (int) (sw * 0.23f));
+			int ix = 6, iy = (int) (sh * 0.40f);
+			panel(ctx, ix, iy, pw, 48);
+			Draw.text(ctx, "Client Info", ix + 6, iy + 5, 0xFFFFFFFF);
+			Draw.text(ctx, "FPS: " + MinecraftClient.getInstance().getCurrentFps(), ix + 6, iy + 18, 0xFF4ADE80);
+			Draw.text(ctx, "Time: " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")), ix + 6, iy + 30, 0xFFB9A9D6);
 
-        // ---- logo ----
-        float cx = sw / 2f;
-        int w1 = textRenderer.getWidth("STRUCTURE");
-        float avail = by0 - 8 - 12;
-        float sc = Math.max(1f, Math.min(sw * 0.40f / w1, (avail - 28) / 20f));
-        int u = Math.max(1, Math.round(sc * 0.6f));
-        int cy = 12;
-        c.fill((int) cx - 6 * u, cy + 5 * u, (int) cx + 6 * u, cy + 7 * u, 0xFFC8A2FF);
-        for (int i = -1; i <= 1; i++) c.fill((int) cx + i * 5 * u - u, cy + u, (int) cx + i * 5 * u + u, cy + 5 * u, 0xFFC8A2FF);
-        float l1 = cy + 8 * u;
-        big(c, "§lSTRUCTURE", cx, l1, sc, SILVER, 0xFF3B1068);
-        float l2 = l1 + 9 * sc;
-        big(c, "§l§oCLIENT", cx, l2, sc * 1.05f, ACC, 0xFF1E0646);
-        String tagline = "P L A Y  •  C H E A T  •  D O M I N A T E";
-        txt(c, tagline, (int) cx - textRenderer.getWidth(tagline) / 2, (int) (l2 + 9 * sc * 1.05f + 4), SOFT);
+			int qx = sw - pw - 6, qy = (int) (sh * 0.36f);
+			panel(ctx, qx, qy, pw, 62);
+			Draw.text(ctx, "Quick Features", qx + 6, qy + 5, 0xFFFFFFFF);
+			String[] ql = {"Armor HUD", "Client Info", "Coordinates"};
+			Class<?>[] qc = {dev.structure.client.module.player.ArmorHud.class,
+				dev.structure.client.module.utility.ClientInfo.class,
+				dev.structure.client.module.player.Coordinates.class};
+			for (int i = 0; i < 3; i++) {
+				int ry = qy + 18 + i * 14;
+				Draw.text(ctx, ql[i], qx + 6, ry + 1, 0xFFFFFFFF);
+				var m = ModuleManager.get(qc[i].asSubclass(dev.structure.client.module.Module.class));
+				boolean on = m != null && m.isEnabled();
+				Draw.toggle(ctx, qx + pw - 26, ry, 20, 10, on, acc);
+				final var mm = m;
+				hits.add(qx, ry - 2, pw, 14, () -> {
+					if (mm != null) mm.toggle();
+				});
+			}
 
-        // ---- buttons ----
-        for (int i = 0; i < 6; i++) {
-            int x = (sw - bw) / 2, y = by0 + i * (bh + gap);
-            boolean hov = in(mx, my, x, y, bw, bh);
-            c.fill(x, y, x + bw, y + bh, hov ? 0xFF3B1068 : 0xFF1A0A30);
-            border(c, x, y, bw, bh, hov ? ACC : 0xFF4C2A80);
-            txt(c, ICONS[i], x + 8, y + (bh - 8) / 2, ACC);
-            txt(c, LABELS[i], x + (bw - textRenderer.getWidth(LABELS[i])) / 2, y + (bh - 8) / 2, 0xFFFFFFFF);
-            if (hov && click) {
-                switch (i) {
-                    case 0 -> mc.setScreen(new SelectWorldScreen(this));
-                    case 1 -> mc.setScreen(new MultiplayerScreen(this));
-                    case 2 -> mc.setScreen(new ClickGuiScreen());
-                    case 3 -> mc.setScreen(new OptionsScreen(this, mc.options));
-                    case 4 -> say("Accounts are managed by your launcher.");
-                    default -> mc.scheduleStop();
-                }
-                if (i != 4) return; // ออกจาก render ทันทีถ้าเปลี่ยนหน้าจอ
-            }
-        }
+			int wi = (int) ((now / 4000) % SLIDES.length);
+			int wy = sh - 22 - 42;
+			panel(ctx, 6, wy, pw + 40, 42);
+			Draw.text(ctx, SLIDES[wi][0], 12, wy + 6, 0xFFFFFFFF);
+			Draw.text(ctx, SLIDES[wi][1], 12, wy + 16, acc);
+			Draw.text(ctx, SLIDES[wi][2], 12, wy + 26, 0xFFB9A9D6);
+			for (int i = 0; i < SLIDES.length; i++) ctx.fill(12 + i * 8, wy + 37, 16 + i * 8, wy + 40, i == wi ? acc : 0xFF3A3050);
+		}
 
-        // ---- top-left tag ----
-        panel(c, 4, 4, 104, 24);
-        c.fill(8, 8, 22, 24, ACC_D);
-        txt(c, "S", 13, 12, 0xFFFFFFFF);
-        txt(c, "Structure Client", 27, 8, 0xFFFFFFFF);
-        txt(c, "v0.1.0-Alpha", 27, 18, ACC);
+		// footer
+		ctx.fill(0, sh - 16, sw, sh, 0xCC000000);
+		Draw.text(ctx, "Powered by Fabric", 8, sh - 12, 0xFFB9A9D6);
+		String credit = "Made by Structure Team";
+		Draw.text(ctx, credit, sw - 8 - Draw.width(credit), sh - 12, 0xFFB9A9D6);
+	}
 
-        // ---- side panels (hidden on very narrow screens) ----
-        if (sw >= 420) {
-            int pw = Math.min(116, (int) (sw * 0.23f));
-            // Client Info
-            int ix = 6, iy = (int) (sh * 0.40f);
-            panel(c, ix, iy, pw, 48);
-            txt(c, "★ Client Info", ix + 6, iy + 5, 0xFFFFFFFF);
-            txt(c, "FPS: ", ix + 6, iy + 18, SOFT);
-            txt(c, String.valueOf(mc.getCurrentFps()), ix + 6 + textRenderer.getWidth("FPS: "), iy + 18, 0xFF4ADE80);
-            txt(c, "Time: " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")), ix + 6, iy + 30, SOFT);
+	private void action(int i) {
+		MinecraftClient mc = MinecraftClient.getInstance();
+		switch (i) {
+			case 0 -> mc.setScreen(new SelectWorldScreen(this));
+			case 1 -> mc.setScreen(new MultiplayerScreen(this));
+			case 2 -> mc.setScreen(new ClickGuiScreen());
+			case 3 -> mc.setScreen(new OptionsScreen(this, mc.options));
+			default -> mc.scheduleStop();
+		}
+	}
 
-            // Quick Features
-            int qx = sw - pw - 6, qy = (int) (sh * 0.36f);
-            panel(c, qx, qy, pw, 62);
-            txt(c, "⚡ Quick Features", qx + 6, qy + 5, 0xFFFFFFFF);
+	private void big(DrawContext ctx, String s, float cx, float y, float sc, int col, int shadow) {
+		int w = Draw.width(s);
+		var m = ctx.getMatrices();
+		m.pushMatrix();
+		m.translate(cx - w * sc / 2f, y);
+		m.scale(sc, sc);
+		Draw.textFlat(ctx, s, 1, 1, shadow);
+		Draw.textFlat(ctx, s, 0, 0, col);
+		m.popMatrix();
+	}
 
-            Mod[] qm = {
-                StructureClient.modules.get(PlayerModules.ArmorHud.class),
-                StructureClient.modules.get(UtilityModules.ClientInfo.class),
-                StructureClient.modules.get(PlayerModules.Coordinates.class)
-            };
-            String[] ql = {"Armor HUD", "Client Info", "Coordinates"};
-            for (int i = 0; i < 3; i++) {
-                int ry = qy + 18 + i * 14;
-                txt(c, ql[i], qx + 6, ry + 1, 0xFFFFFFFF);
-                boolean enabled = qm[i] != null && qm[i].isEnabled();
-                toggle(c, qx + pw - 26, ry, enabled);
-                if (click && in(mx, my, qx, ry - 2, pw, 14) && qm[i] != null) {
-                    qm[i].toggle();
-                }
-            }
-
-            // Welcome card (slides)
-            int wi = (int) ((now / 4000) % 3);
-            int wy = sh - 22 - 42;
-            panel(c, 6, wy, pw + 40, 42);
-            txt(c, SLIDES[wi][0], 12, wy + 6, 0xFFFFFFFF);
-            txt(c, SLIDES[wi][1], 12, wy + 16, ACC);
-            txt(c, SLIDES[wi][2], 12, wy + 26, SOFT);
-            for (int i = 0; i < 3; i++) c.fill(12 + i * 8, wy + 37, 16 + i * 8, wy + 40, i == wi ? ACC : 0xFF3A3050);
-
-            // Tip
-            int ty = sh - 22 - 40;
-            panel(c, qx, ty, pw, 40);
-            txt(c, "ⓘ Tip:", qx + 6, ty + 5, 0xFFFFFFFF);
-            int yy = ty + 16;
-            var lines = textRenderer.wrapLines(Text.literal("Press Right Shift to open ClickGUI!"), pw - 12);
-            for (OrderedText ot : lines.subList(0, Math.min(2, lines.size()))) {
-                c.drawText(textRenderer, ot, qx + 6, yy, SOFT, false);
-                yy += 10;
-            }
-        }
-
-        // ---- footer ----
-        c.fill(0, sh - 16, sw, sh, 0xCC000000);
-        txt(c, "◆ Powered by Fabric", 8, sh - 12, SOFT);
-        String mw = "Made with ♥ by Structure Team";
-        txt(c, mw, sw - 8 - textRenderer.getWidth(mw), sh - 12, SOFT);
-
-        if (now < toastUntil) {
-            int tw = textRenderer.getWidth(toast) + 12;
-            panel(c, (sw - tw) / 2, by0 - 20, tw, 14);
-            txt(c, toast, (sw - tw) / 2 + 6, by0 - 17, 0xFFFFFFFF);
-        }
-    }
+	private void panel(DrawContext ctx, int x, int y, int w, int h) {
+		ctx.fill(x, y, x + w, y + h, 0xCC10051C);
+		Draw.outline(ctx, x, y, w, h, 0xFF3B1068);
+	}
 }
