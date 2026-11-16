@@ -5,14 +5,13 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 /**
- * Read/write access to MinecraftClient.itemUseCooldown (private in the game code).
- * Used by FastPlace to shorten the delay between block placements.
+ * Read/write access to MinecraftClient.itemUseCooldown.
  */
 @Mixin(MinecraftClient.class)
 public interface MinecraftClientAccessor {
-	@Accessor("itemUseCooldown")
-	int structure$getItemUseCooldown();
+    @Accessor("itemUseCooldown")
+    int structure$getItemUseCooldown();
 
-	@Accessor("itemUseCooldown")
-	void structure$setItemUseCooldown(int value);
+    @Accessor("itemUseCooldown")
+    void structure$setItemUseCooldown(int value);
 }
