@@ -1,5 +1,6 @@
 package dev.structure.client.module.player;
 
+import dev.structure.client.mixin.MinecraftClientAccessor;
 import dev.structure.client.module.Category;
 import dev.structure.client.module.Module;
 import dev.structure.client.setting.NumberSetting;
@@ -23,6 +24,8 @@ public class FastPlace extends Module {
 	@Override
 	public void onPreTick() {
 		if (mc.player == null || mc.world == null || !mc.isInSingleplayer()) return;
-		if (mc.itemUseCooldown > delay.i()) mc.itemUseCooldown = delay.i();
+		MinecraftClientAccessor acc = (MinecraftClientAccessor) (Object) mc;
+		int cooldown = acc.structure$getItemUseCooldown();
+		if (cooldown > delay.i()) acc.structure$setItemUseCooldown(delay.i());
 	}
 }
