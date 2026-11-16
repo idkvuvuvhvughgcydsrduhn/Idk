@@ -40,7 +40,7 @@ public final class ModuleManager {
 			// Visual
 			new Esp(), new Fullbright(), new Tracers(), new Nametags(), new ItemEsp(), new StorageEsp(), new EntityHighlight(),
 			// Player
-			new AutoTool(), new ArmorHud(), new InventoryHud(), new Coordinates(), new TimerModule(), new PotionHud(),
+			new AutoTool(), new ArmorHud(), new InventoryHud(), new Coordinates(), new TimerModule(), new PotionHud(), new FastPlace(),
 			// World
 			new WorldInfo(), new BlockInfo(), new EntityInfo(), new EnvironmentDisplay(),
 			// Utility
